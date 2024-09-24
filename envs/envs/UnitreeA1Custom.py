@@ -36,7 +36,13 @@ class UnitreeA1Custom(MujocoEnv, utils.EzPickle):
 
         self.mode = mode
 
-        self.xml_path = "envs/envs/assets/unitree_a1_torque.xml"
+        self.init_samples = np.load("./envs/envs/assets/assets/unitree_a1_traj_init_samples.npy")
+
+        project_dir = Path(__file__).parent.parent.parent
+        self.xml_path = str(
+            project_dir
+            / "envs/envs/assets/unitree_a1_torque.xml"
+        )
 
         obs_shape = (
             18 + 16
@@ -44,6 +50,7 @@ class UnitreeA1Custom(MujocoEnv, utils.EzPickle):
         observation_space = Box(
             low=-np.inf, high=np.inf, shape=(obs_shape,), dtype=np.float64
         )
+       
         if mode == "easy":
             self.desired_velocity = np.array([0.23, 0.0]) * self.target_speed_scale
         elif mode == "hard":
@@ -182,10 +189,17 @@ class UnitreeA1HasExpertDataCustom(MujocoEnv, utils.EzPickle):
 
         self.latent_action_space_dim = latent_action_space_dim
 
-        self.mode = mode
-        print(f"UnitreeA1 Mode: {mode}")
+        self.target_speed_scale = target_speed_scale
 
-        self.xml_path = "envs/envs/assets/unitree_a1_torque.xml"
+        self.mode = mode
+        
+        self.init_samples = np.load("./envs/envs/assets/assets/unitree_a1_traj_init_samples.npy")
+
+        project_dir = Path(__file__).parent.parent.parent
+        self.xml_path = str(
+            project_dir
+            / "envs/envs/assets/unitree_a1_torque.xml"
+        )
 
         obs_shape = (
             18 + 16
@@ -193,8 +207,7 @@ class UnitreeA1HasExpertDataCustom(MujocoEnv, utils.EzPickle):
         observation_space = Box(
             low=-np.inf, high=np.inf, shape=(obs_shape,), dtype=np.float64
         )
-        self.target_speed_scale = target_speed_scale
-        print(f"UnitreeA1 Target Speed Scale: {self.target_speed_scale}")
+
         if mode == "easy":
             self.desired_velocity = np.array([0.23, 0.0]) * self.target_speed_scale
         elif mode == "hard":

@@ -21,18 +21,18 @@ from stable_baselines3.common.vec_env import (
 @dataclass
 class Args:
     wandb_project_name: str = "latent_action_priors"
-    wandb_entity: str = "oliefr-org"
+    wandb_entity: str = ""
 
     seed: int = 1
     env_id: str = "UnitreeH1.walk"
-    use_style_rewards: bool = True  # uses expert data for style reward
+    use_expert_data: bool = False  # uses expert data for style reward
 
     latent_action_space_dim: int = (
         0  # Dimensionality of the action space used by the DRL policy. Set to 0 for baselines action space. Set to latent action space prior dimension for using only latent action space prior. Set to sum of baseline action space and latent action space prior for using projected actions and residual actions.
     )
 
     projector_path: str = (
-        "recorded_experts/loco_mujoco/loco_mujoco_h1.walk_latent_6_nonLin/UnitreeH1.walk.perfect_decoder.pth" # path to the decoder for the latent action prior. Only used if latent_action_space_dim != 0
+        "expert_demonstrations/Unitree_A1_H1/UnitreeH1.walk.perfect_decoder.pth" # path to the decoder for the latent action prior. Only used if latent_action_space_dim != 0
     )
     projector_size_0: int = 6
     projector_size_1: int = 11  # this should be equal to the action space shape
@@ -98,7 +98,7 @@ if __name__ == "__main__":
             env_name=args.env_id,
             render_mode="rgb_array",
             latent_action_space_dim=args.latent_action_space_dim,
-            use_style_rewards=args.use_style_rewards,
+            use_expert_data=args.use_expert_data,
         )
         env = TimeLimit(env, max_episode_steps=1000)
         env = Monitor(env)

@@ -7,7 +7,7 @@ register(
 )
 
 register(
-    id="HumanoidHasExpertDataCustom_v4",
+    id="HumanoidHasExpertDataCustom-v4",
     entry_point="envs.envs:HumanoidHasExpertDataCustom_v4",
     max_episode_steps=1000,
 )
@@ -19,7 +19,7 @@ register(
 )
 
 register(
-    id="AntHasExpertDataCustom_v4",
+    id="AntHasExpertDataCustom-v4",
     entry_point="envs.envs:AntHasExpertDataCustom_v4",
     max_episode_steps=1000,
 )
@@ -31,7 +31,7 @@ register(
 )
 
 register(
-    id="HalfCheetahHasExpertDataCustom_v4",
+    id="HalfCheetahHasExpertDataCustom-v4",
     entry_point="envs.envs:HalfCheetahHasExpertDataCustom_v4",
     max_episode_steps=1000,
 )

@@ -23,7 +23,7 @@ from stable_baselines3.common.vec_env import (
 @dataclass
 class Args:
     wandb_project_name: str = "latent_action_priors"
-    wandb_entity: str = "oliefr-org"
+    wandb_entity: str = ""
 
     seed: int = 1
     env_id: str = "multiUnitreeA1ConnectedHasExpertDataCustom-v0"

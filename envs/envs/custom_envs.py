@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from pathlib import Path
 import pathlib
 from gymnasium.spaces import Box
 from gymnasium import utils
@@ -183,7 +184,6 @@ class HumanoidHasExpertDataCustom_v4(humanoid_v4.HumanoidEnv):
         xy_position_before = mass_center(self.model, self.data)
         self.do_simulation(action, self.frame_skip)
         self.step_ += 1
-        self.phase = self.step_ % len(self.relative_foot_pos_cycle)
         xy_position_after = mass_center(self.model, self.data)
 
         xy_velocity = (xy_position_after - xy_position_before) / self.dt
@@ -258,8 +258,10 @@ class AntHasExpertDataCustom_v4(ant_v4.AntEnv):
 
         self.latent_action_space_dim = latent_action_space_dim
 
-        self.xml_file = (
-            "./envs/envs/assets/ant.xml"
+        project_dir = Path(__file__).parent.parent.parent
+        self.xml_file = str(
+            project_dir
+            / "envs/envs/assets/ant.xml"
         )
 
         self._ctrl_cost_weight = 0.5
@@ -318,12 +320,6 @@ class AntHasExpertDataCustom_v4(ant_v4.AntEnv):
 
         self.expert_obs_cycle = expert_data["recorded_obs_single_cycle"].copy()
 
-        assert (
-            len(self.expert_base_traj_cycle)
-            == len(self.expert_foot_traj_cycle)
-            == len(self.expert_obs_cycle)
-        )
-
         self.step_ = 0
         self.phase = 0
 
@@ -339,7 +335,6 @@ class AntHasExpertDataCustom_v4(ant_v4.AntEnv):
         xy_position_before = self.get_body_com("torso")[:2].copy()
         self.do_simulation(action, self.frame_skip)
         self.step_ += 1
-        self.phase = self.step_ % len(self.relative_foot_pos_cycle)
         xy_position_after = self.get_body_com("torso")[:2].copy()
 
         xy_velocity = (xy_position_after - xy_position_before) / self.dt
@@ -429,7 +424,6 @@ class AntHasExpertDataCustom_v4(ant_v4.AntEnv):
             return np.concatenate((position, velocity, contact_force))
         else:
             return np.concatenate((position, velocity, np.array([self.phase])))
-        # relative_reference_foot_pos.flatten(), relative_foot_pos.flatten()))
 
 
 class AntCustom_v4(ant_v4.AntEnv):
@@ -558,12 +552,6 @@ class HalfCheetahHasExpertDataCustom_v4(half_cheetah_v4.HalfCheetahEnv):
 
         self.expert_obs_cycle = expert_data["recorded_obs_single_cycle"].copy()
 
-        assert (
-            len(self.expert_base_traj_cycle)
-            == len(self.expert_foot_traj_cycle)
-            == len(self.expert_obs_cycle)
-        )
-
         self.step_ = 0
         self.phase = 0
 
@@ -578,7 +566,6 @@ class HalfCheetahHasExpertDataCustom_v4(half_cheetah_v4.HalfCheetahEnv):
         x_position_before = self.data.qpos[0]
         self.do_simulation(action, self.frame_skip)
         self.step_ += 1
-        self.phase = self.step_ % len(self.relative_foot_pos_cycle)
         x_position_after = self.data.qpos[0]
         x_velocity = (x_position_after - x_position_before) / self.dt
 
