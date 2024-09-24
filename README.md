@@ -11,6 +11,3 @@
 
 Cite the paper and project as follows:
 > cite
-
-ToDo
-- fix multi unitreeA1 envs
