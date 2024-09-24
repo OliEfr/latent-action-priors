@@ -1,0 +1,15 @@
+UnitreeA1.simple.perfect:
+  WARNING: Latent space is not bounded by [-1, 1] for 1.0387297559405924
+  full episode MAE loss: 0.009394197334824887
+  full episode MSE loss: 0.00025334079475349333
+  latent_dim: 6
+  num_samples: 41
+  train cycle MAE loss: 0.007324207960785125
+  train cycle MSE loss: 8.873761147281005e-05
+UnitreeH1.walk.perfect:
+  full episode MAE loss: 0.01676491895454035
+  full episode MSE loss: 0.0005692328590440955
+  latent_dim: 6
+  num_samples: 105
+  train cycle MAE loss: 0.013281693881815085
+  train cycle MSE loss: 0.00033509530271420444

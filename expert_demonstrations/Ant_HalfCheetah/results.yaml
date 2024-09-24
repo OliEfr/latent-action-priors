@@ -1,0 +1,14 @@
+Ant-v4:
+  full episode MAE loss: 0.017750009694049336
+  full episode MSE loss: 0.002893760689492266
+  latent_dim: 4
+  num_samples: 11
+  train cycle MAE loss: 0.003919046902101441
+  train cycle MSE loss: 2.6011768197855014e-05
+HalfCheetah-v4:
+  full episode MAE loss: 0.15774646096504613
+  full episode MSE loss: 0.04514682526362138
+  latent_dim: 3
+  num_samples: 5
+  train cycle MAE loss: 9.738792368883346e-08
+  train cycle MSE loss: 1.4564168997608587e-14

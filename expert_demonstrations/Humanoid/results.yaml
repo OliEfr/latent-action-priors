@@ -1,0 +1,7 @@
+Humanoid:
+  full episode MAE loss: 0.13134775556139
+  full episode MSE loss: 0.03974358998100157
+  latent_dim: 9
+  num_samples: 22
+  train cycle MAE loss: 0.00034517794747657106
+  train cycle MSE loss: 4.0087302363809435e-07

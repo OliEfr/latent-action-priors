@@ -1,0 +1,9 @@
+seed: 12345675
+Ant-v4:
+  cycle: 9
+Hopper-v4:
+  cycle: 2
+HalfCheetah-v4:
+  cycle: 18
+Swimmer-v4:
+  cycle: 5
