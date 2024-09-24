@@ -57,6 +57,12 @@ class HumanoidCustom_v4(humanoid_v4.HumanoidEnv):
         if self.render_mode == "human":
             self.render()
         return observation, reward, terminated, False, info
+    
+    def do_simulation(self, ctrl, n_frames):
+        """
+        Step the simulation n number of frames and applying a control action.
+        """
+        self._step_mujoco_simulation(ctrl, n_frames)
 
     def _set_action_space(self):
         if self.latent_action_space_dim:
@@ -222,6 +228,12 @@ class HumanoidHasExpertDataCustom_v4(humanoid_v4.HumanoidEnv):
         if self.render_mode == "human":
             self.render()
         return observation, reward, terminated, False, info
+    
+    def do_simulation(self, ctrl, n_frames):
+        """
+        Step the simulation n number of frames and applying a control action.
+        """
+        self._step_mujoco_simulation(ctrl, n_frames)
 
     def reset_model(self):
         self.step_ = 0
@@ -378,6 +390,12 @@ class AntHasExpertDataCustom_v4(ant_v4.AntEnv):
             self.render()
         return observation, rewards, terminated, False, info
 
+    def do_simulation(self, ctrl, n_frames):
+        """
+        Step the simulation n number of frames and applying a control action.
+        """
+        self._step_mujoco_simulation(ctrl, n_frames)
+    
     def _set_action_space(self):
         if self.latent_action_space_dim:
             bounds = np.full((self.latent_action_space_dim, 2), [-1.0, 1.0]).astype(
@@ -472,6 +490,12 @@ class AntCustom_v4(ant_v4.AntEnv):
         if self.render_mode == "human":
             self.render()
         return observation, reward, terminated, False, info
+    
+    def do_simulation(self, ctrl, n_frames):
+        """
+        Step the simulation n number of frames and applying a control action.
+        """
+        self._step_mujoco_simulation(ctrl, n_frames)
 
     def _set_action_space(self):
         if self.latent_action_space_dim:
@@ -596,6 +620,12 @@ class HalfCheetahHasExpertDataCustom_v4(half_cheetah_v4.HalfCheetahEnv):
         if self.render_mode == "human":
             self.render()
         return observation, reward, terminated, False, info
+    
+    def do_simulation(self, ctrl, n_frames):
+        """
+        Step the simulation n number of frames and applying a control action.
+        """
+        self._step_mujoco_simulation(ctrl, n_frames)
 
     def _get_obs(self):
         position = self.data.qpos.flat.copy()
@@ -670,6 +700,12 @@ class HalfCheetahCustom_v4(half_cheetah_v4.HalfCheetahEnv):
         if self.render_mode == "human":
             self.render()
         return observation, reward, terminated, False, info
+    
+    def do_simulation(self, ctrl, n_frames):
+        """
+        Step the simulation n number of frames and applying a control action.
+        """
+        self._step_mujoco_simulation(ctrl, n_frames)
 
     def _set_action_space(self):
         if self.latent_action_space_dim:

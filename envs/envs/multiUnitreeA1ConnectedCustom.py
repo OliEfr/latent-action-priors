@@ -5,12 +5,16 @@ from gymnasium import utils
 from gymnasium.envs.mujoco import MujocoEnv
 from gymnasium.spaces import Box
 from scipy.spatial.transform import Rotation
-from torch import Value
 
 DEFAULT_CAMERA_CONFIG = {"distance": 4.0, "elevation": -15.0}
 
 
 class multiUnitreeA1ConnectedCustom(MujocoEnv, utils.EzPickle):
+    """
+    Gymnasium environment for the Unitree A1 quadruped robot that is able to spawn multiple agents.
+
+    """
+
     metadata = {
         "render_modes": [
             "human",
@@ -22,22 +26,18 @@ class multiUnitreeA1ConnectedCustom(MujocoEnv, utils.EzPickle):
 
     def __init__(
         self,
-        n_unitreeA1=3,  # number of agents
         latent_action_space_dim: bool = False,
         mode: str = "easy",
         **kwargs,
     ):
         utils.EzPickle.__init__(
             self,
-            n_unitreeA1,
             **kwargs,
         )
         
-        raise ValueError("ToDo: implement random target sampling. Update XML with target indicator.")
-
         self.latent_action_space_dim = latent_action_space_dim
 
-        self.n_unitreeA1 = n_unitreeA1
+        self.n_unitreeA1 = 2
 
         self.mode = mode
 
@@ -62,11 +62,10 @@ class multiUnitreeA1ConnectedCustom(MujocoEnv, utils.EzPickle):
             self.desired_velocity = random_vector / norm * 0.23
         else:
             raise ValueError("mode must be either 'easy' or 'hard'")
-        self.prev_xpos = np.zeros((self.n_unitreeA1, 2))
-        self.target_pos = np.array([1.5, 0.5])
+        self.target_pos = np.array([1.0, 0.5])
 
         # initial states to sample from; taken from loco_mujoco
-        self.init_samples = np.load("./unitree_a1_traj_init_samples.npy")
+        self.init_samples = np.load("./envs/envs/assets/assets/unitree_a1_traj_init_samples.npy")
 
         self.start_episode = True
 
@@ -97,69 +96,44 @@ class multiUnitreeA1ConnectedCustom(MujocoEnv, utils.EzPickle):
         ):
             divergence_detected = True
             print("Divergence detected. Terminating episode.")
-
+        
         self.do_simulation(action, self.frame_skip)
 
         obs = self._get_obs()
-        reached_goal = self._reached_goal()
 
-        terminated = self._has_fallen() or divergence_detected or reached_goal
+        terminated = self._has_fallen() or divergence_detected
 
-        reward = self._get_reward()
+        reward_pos, reached_goal_pos= self._get_reward()
+        reward = reward_pos
 
-        info = {"task_reward": reward, "reached_goal": float(reached_goal)}
-
-        # don't log this additional reward term
-        if reached_goal:
-            reward += 500
+        info = {"task_reward": reward_pos, "reached_goal": float(reached_goal_pos)}
 
         self.start_episode = False
 
         return obs, reward, terminated, False, info
+    
+    def do_simulation(self, ctrl, n_frames):
+        """
+        Step the simulation n number of frames and applying a control action.
+        """
+        self._step_mujoco_simulation(ctrl, n_frames)
 
-    def _reached_goal(self):
-        xpos = self.data.xpos.copy()
-
-        xpos_connector_id = self.model.body(f"connector").id  # x-y-z
-        xpos_connector = xpos[xpos_connector_id][0:2]
-
-        return np.linalg.norm(xpos_connector - self.target_pos) <= 0.1
 
     def _get_reward(self):
         # reward is difference of current position from target position
-
-        # curr_pos = self.data.qpos.flat.copy()[:2]
-        # reward = np.exp(3.0 * -np.linalg.norm(curr_pos - self.target_pos))
         xpos = self.data.xpos.copy()
 
         xpos_connector_id = self.model.body(f"connector").id  # x-y-z
         xpos_connector = xpos[xpos_connector_id][0:2]
-        reward = np.exp(-np.linalg.norm(xpos_connector - self.target_pos))
+        
+        reward_pos = np.exp(-np.linalg.norm(xpos_connector - self.target_pos))
+        reached_goal_pos = np.linalg.norm(xpos_connector - self.target_pos) <= 0.1
 
-        # reward is mean difference of agents from target velocity
-        # for i in range(1, self.n_unitreeA1 + 1):
-        #     xpos_trunk_tz_id = self.model.body(
-        #         f"trunk___{i}"
-        #     ).id  # x-y-z coordinates for every body
-        #     xpos_trunk_i = xpos[xpos_trunk_tz_id][0:2]
-        #     vel_trunk_i = (xpos_trunk_i - self.prev_xpos[i - 1]) / self.dt
-        #     self.prev_xpos[i - 1] = xpos_trunk_i
-        #     reward.append(
-        #         np.exp(-5.0 * np.linalg.norm(vel_trunk_i - self.desired_velocity))
-        #     )
-
-        # # curr_velocity_xy = self.data.qvel.copy()[0:1]
-
-        # # reward = np.exp(-5.0 * np.linalg.norm(curr_velocity_xy - self.desired_velocity))
-
-        # reward = np.mean(reward)
-
-        return reward
+        return reward_pos, reached_goal_pos
 
     def _has_fallen(self):
 
         trunks_tz = []
-        # trunks_tx = []
 
         xpos = self.data.xpos.copy()
         xmat = self.data.xmat.copy()
@@ -173,7 +147,6 @@ class multiUnitreeA1ConnectedCustom(MujocoEnv, utils.EzPickle):
             trunk_height_condition = (
                 xpos[xpos_trunk_tz_id][2] < 0.19
             )  # corresponds to trunk_height_condition from original loco_mujoco env
-            # trunks_tx.append(xpos[xpos_trunk_tz_id][0])
             trunks_tz.append(xpos[xpos_trunk_tz_id][2])
 
             xmat_i = xmat[xpos_trunk_tz_id].reshape(3, 3)
@@ -190,7 +163,6 @@ class multiUnitreeA1ConnectedCustom(MujocoEnv, utils.EzPickle):
 
         # trunk_dz_condition
         all_trunk_conditions.append(np.ptp(trunks_tz) > 0.1)
-        # all_trunk_conditions.append(np.ptp(trunks_tx) > 0.1)
 
         return any(all_trunk_conditions)  # use any() or all()
 
@@ -198,7 +170,6 @@ class multiUnitreeA1ConnectedCustom(MujocoEnv, utils.EzPickle):
 
         position = self.data.qpos.flat.copy()
         velocity = self.data.qvel.flat.copy()
-        # distance = position[:2] - self.target_pos # vectorial x-y difference
 
         xpos = self.data.xpos.copy()
 
@@ -212,6 +183,15 @@ class multiUnitreeA1ConnectedCustom(MujocoEnv, utils.EzPickle):
     def reset_model(self):
 
         self.start_episode = True
+        
+        # sample random target point in 45° angle around x axis and 1m radius
+        theta = np.random.uniform(-np.pi/4, np.pi/4)
+        x = np.cos(theta)
+        y = np.sin(theta) + 0.5 # 0.5 is center of connector in y-direction
+        self.target_pos = np.array([x, y])
+        
+        # update target visual
+        self.model.site(f"target").pos[0:2] = self.target_pos
 
         if self.mode == "hard":
             random_vector = np.random.rand(2)
@@ -283,22 +263,18 @@ class multiUnitreeA1ConnectedHasExpertDataCustom(MujocoEnv, utils.EzPickle):
 
     def __init__(
         self,
-        n_unitreeA1=3,  # number of agents
         latent_action_space_dim: bool = False,
         mode: str = "easy",
         **kwargs,
     ):
         utils.EzPickle.__init__(
             self,
-            n_unitreeA1,
             **kwargs,
         )
 
         self.latent_action_space_dim = latent_action_space_dim
 
-        self.n_unitreeA1 = n_unitreeA1
-        if n_unitreeA1 == 3:
-            raise ValueError("Update xml with target indicator.")
+        self.n_unitreeA1 = 2
 
         self.mode = mode
 
@@ -315,7 +291,6 @@ class multiUnitreeA1ConnectedHasExpertDataCustom(MujocoEnv, utils.EzPickle):
             low=-np.inf, high=np.inf, shape=(obs_shape,), dtype=np.float64
         )
 
-        # self.target_pos = np.array([1, 0.5])
         if mode == "easy":
             self.desired_velocity = np.array([0.23, 0.0])
         elif mode == "hard":
@@ -324,11 +299,9 @@ class multiUnitreeA1ConnectedHasExpertDataCustom(MujocoEnv, utils.EzPickle):
             self.desired_velocity = random_vector / norm * 0.23
         else:
             raise ValueError("mode must be either 'easy' or 'hard'")
-        self.prev_xpos = np.zeros((self.n_unitreeA1, 2))
         self.target_pos = np.array([1.0, 0.5])
 
-        # initial states to sample from; taken from loco_mujoco
-        self.init_samples = np.load("./unitree_a1_traj_init_samples.npy")
+        self.init_samples = np.load("./envs/envs/assets/assets/unitree_a1_traj_init_samples.npy")
 
         self.start_episode = True
 
@@ -345,7 +318,7 @@ class multiUnitreeA1ConnectedHasExpertDataCustom(MujocoEnv, utils.EzPickle):
         )
 
         expert_data = np.load(
-            "recorded_experts/loco_mujoco/loco_mujoco_a1.simple_latent_6_nonLin/UnitreeA1.simple.perfect.npy",
+            "./expert_demonstrations/Unitree_A1_H1/UnitreeA1.simple.perfect.npy",
             allow_pickle=True,
         ).item()
         self.expert_obs_cycle = expert_data["recorded_obs_cycle"].copy()
@@ -389,73 +362,49 @@ class multiUnitreeA1ConnectedHasExpertDataCustom(MujocoEnv, utils.EzPickle):
         self.phase = self.step_ % len(self.expert_obs_cycle)
 
         obs = self._get_obs()
-        reached_goal = self._reached_goal()
 
-        terminated = self._has_fallen() or divergence_detected or reached_goal
-        task_reward = self._get_reward()
+        terminated = self._has_fallen() or divergence_detected # or reached_goal
+        reward_pos, reached_goal_pos= self._get_reward()
 
         style_reward = self.imitating_joint_pos_reward()
+        task_reward = reward_pos
         
         info = {
             "task_reward": task_reward,
+            "reward_pos": reward_pos,
             "style_reward": style_reward,
             "joint_pos_reward": style_reward,
-            "reached_goal": float(reached_goal),
+            "reached_goal": float(reached_goal_pos),
         }
         
-        # don't log this additional reward term
-        if reached_goal:
-            task_reward += 500
-
         reward = 0.67 * task_reward + 0.33 * style_reward
 
         self.start_episode = False
 
         return obs, reward, terminated, False, info
-
-    def _reached_goal(self):
-        xpos = self.data.xpos.copy()
-
-        xpos_connector_id = self.model.body(f"connector").id  # x-y-z
-        xpos_connector = xpos[xpos_connector_id][0:2]
-
-        return np.linalg.norm(xpos_connector - self.target_pos) <= 0.1
+    
+    def do_simulation(self, ctrl, n_frames):
+        """
+        Step the simulation n number of frames and applying a control action.
+        """
+        self._step_mujoco_simulation(ctrl, n_frames)
 
     def _get_reward(self):
         # reward is difference of current position from target position
 
-        # curr_pos = self.data.qpos.flat.copy()[:2]
-        # reward = np.exp(3.0 * -np.linalg.norm(curr_pos - self.target_pos))
         xpos = self.data.xpos.copy()
 
         xpos_connector_id = self.model.body(f"connector").id  # x-y-z
         xpos_connector = xpos[xpos_connector_id][0:2]
-        reward = np.exp(-np.linalg.norm(xpos_connector - self.target_pos))
-
-        # reward is mean difference of agents from target velocity
-        # for i in range(1, self.n_unitreeA1 + 1):
-        #     xpos_trunk_tz_id = self.model.body(
-        #         f"trunk___{i}"
-        #     ).id  # x-y-z coordinates for every body
-        #     xpos_trunk_i = xpos[xpos_trunk_tz_id][0:2]
-        #     vel_trunk_i = (xpos_trunk_i - self.prev_xpos[i - 1]) / self.dt
-        #     self.prev_xpos[i - 1] = xpos_trunk_i
-        #     reward.append(
-        #         np.exp(-5.0 * np.linalg.norm(vel_trunk_i - self.desired_velocity))
-        #     )
-
-        # # curr_velocity_xy = self.data.qvel.copy()[0:1]
-
-        # # reward = np.exp(-5.0 * np.linalg.norm(curr_velocity_xy - self.desired_velocity))
-
-        # reward = np.mean(reward)
-
-        return reward
+        
+        reward_pos = np.exp(-np.linalg.norm(xpos_connector - self.target_pos))
+        reached_goal_pos = np.linalg.norm(xpos_connector - self.target_pos) <= 0.1
+      
+        return reward_pos, reached_goal_pos
 
     def _has_fallen(self):
 
         trunks_tz = []
-        # trunks_tx = []
 
         xpos = self.data.xpos.copy()
         xmat = self.data.xmat.copy()
@@ -469,7 +418,6 @@ class multiUnitreeA1ConnectedHasExpertDataCustom(MujocoEnv, utils.EzPickle):
             trunk_height_condition = (
                 xpos[xpos_trunk_tz_id][2] < 0.19
             )  # corresponds to trunk_height_condition from original loco_mujoco env
-            # trunks_tx.append(xpos[xpos_trunk_tz_id][0])
             trunks_tz.append(xpos[xpos_trunk_tz_id][2])
 
             xmat_i = xmat[xpos_trunk_tz_id].reshape(3, 3)
@@ -486,7 +434,6 @@ class multiUnitreeA1ConnectedHasExpertDataCustom(MujocoEnv, utils.EzPickle):
 
         # trunk_dz_condition
         all_trunk_conditions.append(np.ptp(trunks_tz) > 0.1)
-        # all_trunk_conditions.append(np.ptp(trunks_tx) > 0.1)
 
         return any(all_trunk_conditions)  # use any() or all()
 
@@ -494,7 +441,6 @@ class multiUnitreeA1ConnectedHasExpertDataCustom(MujocoEnv, utils.EzPickle):
 
         position = self.data.qpos.flat.copy()
         velocity = self.data.qvel.flat.copy()
-        # distance = position[:2] - self.target_pos # vectorial x-y difference
 
         xpos = self.data.xpos.copy()
 
@@ -512,6 +458,8 @@ class multiUnitreeA1ConnectedHasExpertDataCustom(MujocoEnv, utils.EzPickle):
 
     def reset_model(self):
         
+        self.start_episode = True
+        
         # sample random target point in 45° angle around x axis and 1m radius
         theta = np.random.uniform(-np.pi/4, np.pi/4)
         x = np.cos(theta)
@@ -521,7 +469,6 @@ class multiUnitreeA1ConnectedHasExpertDataCustom(MujocoEnv, utils.EzPickle):
         # update target visual
         self.model.site(f"target").pos[0:2] = self.target_pos
 
-        self.start_episode = True
         self.step_ = 0
         self.phase = 0
 

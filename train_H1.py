@@ -21,7 +21,7 @@ from stable_baselines3.common.vec_env import (
 @dataclass
 class Args:
     wandb_project_name: str = "latent_action_priors"
-    wandb_entity: str = ""
+    wandb_entity: str = None
 
     seed: int = 1
     env_id: str = "UnitreeH1.walk"

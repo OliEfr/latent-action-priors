@@ -1,7 +1,5 @@
 import gymnasium as gym
 import wandb
-import sys
-import time
 import numpy as np
 import torch
 import tyro
@@ -23,10 +21,10 @@ from stable_baselines3.common.vec_env import (
 @dataclass
 class Args:
     wandb_project_name: str = "latent_action_priors"
-    wandb_entity: str = ""
+    wandb_entity: str = None
 
     seed: int = 1
-    env_id: str = "multiUnitreeA1ConnectedHasExpertDataCustom-v0"
+    env_id: str = "multiUnitreeA1ConnectedCustom-v0"
 
     task_mode = "easy"  # easy
 
@@ -34,10 +32,10 @@ class Args:
         0  # Dimensionality of the action space used by the DRL policy. Set to 0 for baselines action space. Set to latent action space prior dimension for using only latent action space prior. Set to sum of baseline action space and latent action space prior for using projected actions and residual actions. For 2 Unitree A1 latent+full action space dim is 36.
     )
     projector_path: str = (
-        "recorded_experts/loco_mujoco/loco_mujoco_a1.simple_latent_6_nonLin/UnitreeA1.simple.perfect_decoder.pth"
+        "expert_demonstrations/Unitree_A1_H1/UnitreeA1.simple.perfect_decoder.pth"
     )
-    projector_size_0: int = 6
-    projector_size_1: int = 12
+    projector_size_0: int = 6 # Dimensionality of the latent action space prior
+    projector_size_1: int = 12 # Dimensionality of the output of the latent action space prior decoder. Should be equal to baseline action space
 
 
 args = tyro.cli(Args)
@@ -75,7 +73,6 @@ assert (
     args.projector_residual_weight > 0 and args.projector_residual_weight <= 1
 ), "The residual weight must be between 0 and 1."
 
-
 if __name__ == "__main__":
 
     run = wandb.init(
@@ -88,16 +85,14 @@ if __name__ == "__main__":
         monitor_gym=True,
         save_code=True,
     )
-
     log_dir = f"./runs/{run.id}"
 
     def make_env():
         original_action_space = gym.make(
-            args.env_id, latent_action_space_dim=False, n_unitreeA1=2
+            args.env_id, latent_action_space_dim=False
         ).action_space.shape[0]
         env = gym.make(
             args.env_id,
-            n_unitreeA1=2,
             render_mode="rgb_array",
             latent_action_space_dim=args.latent_action_space_dim,
             mode=args.task_mode,

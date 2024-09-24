@@ -86,6 +86,12 @@ class UnitreeA1Custom(MujocoEnv, utils.EzPickle):
         }
 
         return obs, reward, terminated, False, info
+    
+    def do_simulation(self, ctrl, n_frames):
+        """
+        Step the simulation n number of frames and applying a control action.
+        """
+        self._step_mujoco_simulation(ctrl, n_frames)
 
     def _get_reward(self):
 
@@ -277,6 +283,12 @@ class UnitreeA1HasExpertDataCustom(MujocoEnv, utils.EzPickle):
         }
 
         return obs, reward, terminated, False, info
+    
+    def do_simulation(self, ctrl, n_frames):
+        """
+        Step the simulation n number of frames and applying a control action.
+        """
+        self._step_mujoco_simulation(ctrl, n_frames)
 
     def _has_fallen(self):
 
