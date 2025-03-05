@@ -2,7 +2,7 @@
 
 ### Code accompanying the latent action priors paper
 
-🖥️ [Website with videos](https://sites.google.com/view/latent-action-priors)
+🖥️ [Website with videos](https://sites.google.com/view/latent-action-priors)  | 📄 [Paper](https://arxiv.org/abs/2410.03246)
 
 **How to use this repository**: This repository uses `conda` to manage the python environment. Run `source setup.sh` to setup the repository. `expert_demonstrations` contains the data and code to reproduce the single gait cycle expert demonstrations used in the paper. Files with `train_*` run the trainings conducted in the paper. For examples on how to use these training files and conduct experiments see `run.sh`. If you are getting started with this repository, you probably want to look at `run.sh`.
 
